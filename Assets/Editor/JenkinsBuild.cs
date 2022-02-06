@@ -134,6 +134,6 @@ public class JenkinsBuild
     private class Args
     {
         public string appName = "UnityJenkinsDemo";
-        public string targetDir = "~/Desktop";
+        public string targetDir = "";
     }
 }
