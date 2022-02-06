@@ -42,7 +42,7 @@ public class JenkinsBuild
     {
         var args = FindArgs();
 
-        string fullPathAndName = args.targetDir + args.appName;
+        string fullPathAndName = args.appName;
         BuildProject(EnabledScenes, fullPathAndName, BuildTargetGroup.Standalone, BuildTarget.StandaloneLinux64, BuildOptions.None);
     }
 
@@ -133,7 +133,7 @@ public class JenkinsBuild
 
     private class Args
     {
-        public string appName = "AppName";
+        public string appName = "UnityJenkinsDemo";
         public string targetDir = "~/Desktop";
     }
 }
