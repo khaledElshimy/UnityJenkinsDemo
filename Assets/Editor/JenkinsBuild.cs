@@ -19,38 +19,73 @@ public class JenkinsBuild
     // ------------------------------------------------------------------------
     public static void BuildMacOS()
     {
+        var args = FindArgs();
 
-        string appName = "AppName";
-        string targetDir = "~/Desktop";
+        string fullPathAndName = args.targetDir + args.appName + ".app";
+        BuildProject(EnabledScenes, fullPathAndName, BuildTargetGroup.Standalone, BuildTarget.StandaloneOSX, BuildOptions.None);
+    }
+
+    // ------------------------------------------------------------------------
+    // called from Jenkins
+    // ------------------------------------------------------------------------
+    public static void BuildWindows64()
+    {
+        var args = FindArgs();
+
+        string fullPathAndName = args.targetDir + args.appName;
+        BuildProject(EnabledScenes, fullPathAndName, BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64, BuildOptions.None);
+    }
+
+    // ------------------------------------------------------------------------
+    // called from Jenkins
+    // ------------------------------------------------------------------------
+    public static void BuildLinux()
+    {
+        var args = FindArgs();
+
+        string fullPathAndName = args.targetDir + args.appName;
+        BuildProject(EnabledScenes, fullPathAndName, BuildTargetGroup.Standalone, BuildTarget.StandaloneLinux64, BuildOptions.None);
+    }
+
+    private static Args FindArgs()
+    {
+        var returnValue = new Args();
 
         // find: -executeMethod
         //   +1: JenkinsBuild.BuildMacOS
-        //   +2: VRDungeons
-        //   +3: /Users/Shared/Jenkins/Home/jobs/VRDungeons/builds/47/output
+        //   +2: FindTheGnome
+        //   +3: D:\Jenkins\Builds\Find the Gnome\47\output
         string[] args = System.Environment.GetCommandLineArgs();
+        var execMethodArgPos = -1;
+        bool allArgsFound = false;
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i] == "-executeMethod")
             {
-                if (i + 4 < args.Length)
-                {
-                    // BuildMacOS method is args[i+1]
-                    appName = args[i + 2];
-                    targetDir = args[i + 3];
-                    i += 3;
-                }
-                else
-                {
-                    System.Console.WriteLine("[JenkinsBuild] Incorrect Parameters for -executeMethod Format: -executeMethod BuildMacOS <app name> <output dir>");
-                    return;
-                }
+                execMethodArgPos = i;
+            }
+            var realPos = execMethodArgPos == -1 ? -1 : i - execMethodArgPos - 2;
+            if (realPos < 0)
+                continue;
+
+            if (realPos == 0)
+                returnValue.appName = args[i];
+            if (realPos == 1)
+            {
+                returnValue.targetDir = args[i];
+                if (!returnValue.targetDir.EndsWith(System.IO.Path.DirectorySeparatorChar + ""))
+                    returnValue.targetDir += System.IO.Path.DirectorySeparatorChar;
+
+                allArgsFound = true;
             }
         }
 
-        // e.g. // /Users/Shared/Jenkins/Home/jobs/VRDungeons/builds/47/output/VRDungeons.app
-        string fullPathAndName = targetDir + System.IO.Path.DirectorySeparatorChar + appName + ".app";
-        BuildProject(EnabledScenes, fullPathAndName, BuildTargetGroup.Standalone, BuildTarget.StandaloneOSX, BuildOptions.None);
+        if (!allArgsFound)
+            System.Console.WriteLine("[JenkinsBuild] Incorrect Parameters for -executeMethod Format: -executeMethod JenkinsBuild.BuildWindows64 <app name> <output dir>");
+
+        return returnValue;
     }
+
 
     // ------------------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -59,12 +94,9 @@ public class JenkinsBuild
 
         List<string> EditorScenes = new List<string>();
         foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
-        {
             if (scene.enabled)
-            {
                 EditorScenes.Add(scene.path);
-            }
-        }
+
         return EditorScenes.ToArray();
     }
 
@@ -98,5 +130,11 @@ public class JenkinsBuild
         {
             System.Console.WriteLine("[JenkinsBuild] Build Failed: Time:" + buildSummary.totalTime + " Total Errors:" + buildSummary.totalErrors);
         }
+    }
+
+    private class Args
+    {
+        public string appName = "AppName";
+        public string targetDir = "~/Desktop";
     }
 }
